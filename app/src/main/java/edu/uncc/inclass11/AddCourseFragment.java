@@ -1,12 +1,15 @@
 package edu.uncc.inclass11;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +17,8 @@ import android.widget.RadioButton;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -21,7 +26,10 @@ import java.util.HashMap;
 
 import edu.uncc.inclass11.databinding.FragmentAddCourseBinding;
 
+@RequiresApi(api = Build.VERSION_CODES.O)
 public class AddCourseFragment extends Fragment {
+
+    private final String TAG = "demo";
 
     Course course;
     public AddCourseFragment() {
@@ -44,6 +52,8 @@ public class AddCourseFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        getActivity().setTitle("Add Course");
 
         binding.buttonSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -78,29 +88,36 @@ public class AddCourseFragment extends Fragment {
                     course.setCredit_hour(courseHours);
                     course.setLetter_grade(courseLetterGrade);
 
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if(user != null) {
+                        course.setUser_name(user.getDisplayName());
+                    } else {
+                        Log.d(TAG, "onClick: Error: No User Logged In");
+                    }
+
+
+
                     FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-                    db.collection("posts")
+                    db.collection("courses")
                             .add(course)
                             .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                                 @Override
                                 public void onSuccess(DocumentReference documentReference) {
-                                    course.setCourse_number(documentReference.getId());
+                                    course.setCourse_id(documentReference.getId());
+
+                                    Log.d(TAG, "onClick: id" + documentReference.getId() );
 
                                     HashMap<String, Object> courseId = new HashMap<>();
-                                    courseId.put("course_id", course.course_number);
+                                    courseId.put("course_id", course.course_id);
 
                                     db.collection("posts")
-                                            .document(course.course_number)
+                                            .document(course.course_id)
                                             .update(courseId);
 
                                     mListener.updateGrades(course);
-
                                 }
                             });
-//
-
-
 
 
                 }

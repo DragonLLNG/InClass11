@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.Log
                 .commit();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void addCourse() {
         getSupportFragmentManager().beginTransaction()

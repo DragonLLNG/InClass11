@@ -13,6 +13,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -33,21 +36,51 @@ import edu.uncc.inclass11.databinding.GradeRowItemBinding;
 
 public class GradesFragment extends Fragment {
     private String TAG = "demo";
+    private double gpa;
+    private double index;
+    private double hours;
+    private String UserId;
+    private Menu menu;
+
     public GradesFragment() {
         // Required empty public constructor
     }
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
     }
 
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.menu, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.addButton:
+                mListener.addCourse();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
     FragmentGradesBinding binding;
+
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         binding = FragmentGradesBinding.inflate(inflater, container, false);
+
+
         return binding.getRoot();
+
+
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -57,31 +90,51 @@ public class GradesFragment extends Fragment {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        binding.addCourseBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mListener.addCourse();
-            }
-        });
-
 
         binding.recycleViewCourses.setLayoutManager(new LinearLayoutManager(getContext()));
         coursesAdapter = new CoursesAdapter();
         binding.recycleViewCourses.setAdapter(coursesAdapter);
 
+        getActivity().setTitle("Grades");
         getCourse();
 
 
+        for (int i=0; i<mCourses.size(); i++){
+            hours+=mCourses.get(i).getCredit_hour();
+//            if( mCourses.get(i).getLetter_grade().equals("A")){
+//                index = 4.0;
+//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
+//            }
+//            else if (mCourses.get(i).getLetter_grade().equals("B")){
+//                index = 3.0;
+//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
+//            }
+//            else if (mCourses.get(i).getLetter_grade().equals("C")){
+//                index = 2.0;
+//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
+//            }
+//            else if (mCourses.get(i).getLetter_grade().equals("D")){
+//                index = 1.0;
+//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
+//            }
+//            else if (mCourses.get(i).getLetter_grade().equals("F")){
+//                index = 0.0;
+//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
+//            }
 
+        }
 
-
+        binding.textViewGPA.setText("GPA: "+gpa);
+        binding.textViewHours.setText("Hours "+hours);
 
 
     }
 
     void getCourse(){
+
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("posts")
+        db.collection("courses").whereEqualTo("user_name",FirebaseAuth.getInstance().getCurrentUser().getDisplayName())
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
@@ -94,7 +147,6 @@ public class GradesFragment extends Fragment {
                     }
                 });
     }
-
 
 
     static ArrayList<Course> mCourses = new ArrayList<>();
@@ -118,7 +170,6 @@ public class GradesFragment extends Fragment {
                         Log.d(TAG, "onFailure: Error deleting forum" + e);
                     }
                 });
-
         mCourses.remove(course);
         coursesAdapter.notifyDataSetChanged();
     }
@@ -128,9 +179,6 @@ public class GradesFragment extends Fragment {
         mCourses.add(course);
         coursesAdapter.notifyDataSetChanged();
     }
-
-
-
 
 
 
@@ -167,6 +215,8 @@ public class GradesFragment extends Fragment {
             }
 
             public void setupUI(Course course){
+
+
                 mCourse = course;
                 mBinding.textViewCourseNumber.setText(course.getCourse_number());
                 mBinding.textViewCourseName.setText(course.getCourse_name());
@@ -174,15 +224,6 @@ public class GradesFragment extends Fragment {
                 mBinding.textViewCourseLetterGrade.setText(course.getLetter_grade());
 
                 Log.d(TAG, "setupUI2: "+ course.course_number);
-
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
-//                if(user != null && post.created_by_name.equals(user.getDisplayName())) {
-//                    mBinding.imageViewDelete.setVisibility(View.VISIBLE);
-//                } else {
-//                    mBinding.imageViewDelete.setVisibility(View.INVISIBLE);
-//                }
-
 
                 mBinding.imageViewDelete.setOnClickListener(new View.OnClickListener() {
                     @Override
