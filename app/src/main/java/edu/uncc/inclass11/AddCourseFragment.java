@@ -68,6 +68,7 @@ public class AddCourseFragment extends Fragment {
                    Toast.makeText(getContext(), "Please enter all the fields", Toast.LENGTH_SHORT).show();
                 } else if(selectedId == -1){
                     Toast.makeText(getContext(), "Please select a letter grade !!", Toast.LENGTH_SHORT).show();
+
                 } else {
                     String courseLetterGrade;
                     if(selectedId == R.id.radioButtonA) {
@@ -96,7 +97,6 @@ public class AddCourseFragment extends Fragment {
                     }
 
 
-
                     FirebaseFirestore db = FirebaseFirestore.getInstance();
 
                     db.collection("courses")
@@ -107,14 +107,14 @@ public class AddCourseFragment extends Fragment {
                                     course.setCourse_id(documentReference.getId());
 
                                     Log.d(TAG, "onClick: id" + documentReference.getId() );
+                                    Log.d(TAG, "onSuccess: id "+ course.course_id);
 
                                     HashMap<String, Object> courseId = new HashMap<>();
                                     courseId.put("course_id", course.course_id);
 
-                                    db.collection("posts")
+                                    db.collection("courses")
                                             .document(course.course_id)
                                             .update(courseId);
-
                                     mListener.updateGrades(course);
                                 }
                             });

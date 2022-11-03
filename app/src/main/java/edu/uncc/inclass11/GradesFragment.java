@@ -39,7 +39,7 @@ public class GradesFragment extends Fragment {
     private double gpa;
     private double index;
     private double hours;
-    private String UserId;
+
     private Menu menu;
 
     public GradesFragment() {
@@ -90,7 +90,6 @@ public class GradesFragment extends Fragment {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-
         binding.recycleViewCourses.setLayoutManager(new LinearLayoutManager(getContext()));
         coursesAdapter = new CoursesAdapter();
         binding.recycleViewCourses.setAdapter(coursesAdapter);
@@ -99,30 +98,6 @@ public class GradesFragment extends Fragment {
         getCourse();
 
 
-        for (int i=0; i<mCourses.size(); i++){
-            hours+=mCourses.get(i).getCredit_hour();
-//            if( mCourses.get(i).getLetter_grade().equals("A")){
-//                index = 4.0;
-//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
-//            }
-//            else if (mCourses.get(i).getLetter_grade().equals("B")){
-//                index = 3.0;
-//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
-//            }
-//            else if (mCourses.get(i).getLetter_grade().equals("C")){
-//                index = 2.0;
-//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
-//            }
-//            else if (mCourses.get(i).getLetter_grade().equals("D")){
-//                index = 1.0;
-//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
-//            }
-//            else if (mCourses.get(i).getLetter_grade().equals("F")){
-//                index = 0.0;
-//                gpa = mCourses.get(i).getCredit_hour()*index/hours;
-//            }
-
-        }
 
         binding.textViewGPA.setText("GPA: "+gpa);
         binding.textViewHours.setText("Hours "+hours);
@@ -131,7 +106,6 @@ public class GradesFragment extends Fragment {
     }
 
     void getCourse(){
-
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("courses").whereEqualTo("user_name",FirebaseAuth.getInstance().getCurrentUser().getDisplayName())
@@ -142,32 +116,78 @@ public class GradesFragment extends Fragment {
                         for(QueryDocumentSnapshot forumDoc : value) {
                             Course course = forumDoc.toObject(Course.class);
                             mCourses.add(course);
+                            Log.d(TAG, "onEvent: Course Name" + course.course_name + course.credit_hour);
                         }
+
                         coursesAdapter.notifyDataSetChanged();
                     }
                 });
+        updateGPA();
+    }
+
+    void updateGPA(){
+
+            Log.d(TAG, "num courses: "+ mCourses.size());
+            hours = 0;
+            gpa = 0;
+            index = 0;
+        for (int i=0; i<mCourses.size()-1; i++){
+            System.out.println(mCourses.get(i).credit_hour);
+            hours +=  mCourses.get(i).credit_hour;
+
+            Log.d(TAG, "credit hour " + mCourses.get(i).credit_hour );
+
+            Log.d(TAG, "updateGPA: "+ hours);
+            switch (mCourses.get(i).letter_grade) {
+                case "A":
+                    index += 4 * mCourses.get(i).credit_hour;
+                    break;
+                case "B":
+                    index += 3 * mCourses.get(i).credit_hour;
+                    break;
+                case "C":
+                    index += 2 * mCourses.get(i).credit_hour;
+                    break;
+                case "D":
+                    index += 1 * mCourses.get(i).credit_hour;
+                    break;
+                case "F":
+                    index += 0 * mCourses.get(i).credit_hour;
+            }
+
+        }
+        gpa = index/hours;
+
+
+
+        if (hours==0){
+            gpa = 4.0;
+        }
+
     }
 
 
-    static ArrayList<Course> mCourses = new ArrayList<>();
+    ArrayList<Course> mCourses = new ArrayList<>();
     CoursesAdapter coursesAdapter;
 
     public void deleteCourse(Course course) {
-        Log.d(TAG, "deleteCourse: " + course.getCourse_name());
+
+        Log.d(TAG, "deleteCourse: check id" + course.course_id);
+        Log.d(TAG, "deleteCourse: " + course.course_name);
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("courses")
-                .document(course.course_number)
+                .document(course.course_id)
                 .delete()
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void unused) {
-                        Log.d(TAG, "onSuccess: Post successfully deleted");
+                        Log.d(TAG, "onSuccess: Course successfully deleted");
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "onFailure: Error deleting forum" + e);
+                        Log.d(TAG, "onFailure: Error deleting course" + e);
                     }
                 });
         mCourses.remove(course);
@@ -184,7 +204,6 @@ public class GradesFragment extends Fragment {
 
 
     class CoursesAdapter extends RecyclerView.Adapter<CoursesAdapter.CoursesViewHolder>{
-
 
         @NonNull
         @Override
